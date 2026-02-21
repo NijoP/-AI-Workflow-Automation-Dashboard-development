@@ -20,4 +20,4 @@
 - [x] Initialize Git repository
 - [x] Add README and Documentation
 - [x] Commit all files
-- [ ] Push to GitHub (Repo URL: TBD)
+- [x] Push to GitHub: https://github.com/NijoP/-AI-Workflow-Automation-Dashboard-development
