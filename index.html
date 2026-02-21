@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Workflow Automation Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; }
+        .bg-pending { background-color: #fbbf24; }
+        .bg-completed { background-color: #10b981; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-8">
+        <header class="mb-10 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-blue-400">AI Workflow Automation Dashboard</h1>
+                <p class="text-slate-400 mt-2">Deterministic Business Process Automation Engine</p>
+            </div>
+            <div class="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
+                <span class="status-dot bg-completed mr-2"></span> System Healthy
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Input Panel -->
+            <div class="lg:col-span-1 bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    New Workflow
+                </h2>
+                <textarea 
+                    v-model="rawText" 
+                    placeholder="Enter business process text here..." 
+                    class="w-full h-48 bg-slate-900 border border-slate-600 rounded-lg p-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                ></textarea>
+                <button 
+                    @click="submitWorkflow" 
+                    :disabled="loading"
+                    class="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition duration-200 flex justify-center items-center"
+                >
+                    <span v-if="loading" class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></span>
+                    {{ loading ? 'Processing...' : 'Run Automation' }}
+                </button>
+            </div>
+
+            <!-- Dashboard Display -->
+            <div class="lg:col-span-2 space-y-6">
+                <div v-for="workflow in workflows" :key="workflow.workflow_id" class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg mb-6">
+                    <div class="bg-slate-700/50 px-6 py-4 flex justify-between items-center">
+                        <span class="font-mono text-blue-300">#{{ workflow.workflow_id }}</span>
+                        <div class="flex items-center space-x-4">
+                            <span class="text-xs text-slate-400">{{ formatTime(workflow.timestamp) }}</span>
+                            <span :class="['px-2 py-1 rounded text-xs font-bold uppercase', workflow.status === 'COMPLETED' ? 'bg-emerald-900 text-emerald-300' : 'bg-amber-900 text-amber-300']">
+                                {{ workflow.status }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Summary</h3>
+                            <p class="text-slate-200">{{ workflow.summary }}</p>
+                            
+                            <div class="mt-4 p-3 bg-slate-900/50 rounded-lg border border-slate-700">
+                                <span class="text-xs text-slate-500">Processing Time:</span>
+                                <span class="ml-2 text-sm text-blue-400 font-mono">{{ workflow.processing_time_ms.toFixed(2) }}ms</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Extracted Tasks</h3>
+                            <ul class="space-y-2">
+                                <li v-for="task in parseTasks(workflow.tasks)" class="flex items-start">
+                                    <svg class="w-4 h-4 mr-2 text-emerald-500 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <span class="text-sm text-slate-300">{{ task }}</span>
+                                </li>
+                                <li v-if="parseTasks(workflow.tasks).length === 0" class="text-sm text-slate-500 italic">No tasks identified.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div v-if="parseTasks(workflow.priority_items).length > 0" class="px-6 pb-6">
+                        <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider mb-2">Priority Items</h3>
+                        <div class="flex flex-wrap gap-2">
+                            <span v-for="item in parseTasks(workflow.priority_items)" class="bg-red-900/30 text-red-400 text-xs px-3 py-1 rounded-full border border-red-900/50">
+                                {{ item }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="workflows.length === 0" class="text-center py-20 bg-slate-800/50 rounded-xl border border-dashed border-slate-700">
+                    <p class="text-slate-500">No workflows processed yet. Submit text to see results.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const workflows = ref([]);
+                const rawText = ref("");
+                const loading = ref(false);
+
+                const fetchWorkflows = async () => {
+                    try {
+                        const response = await fetch('/api/workflows');
+                        workflows.ref = await response.json(); // Fix assignment
+                        workflows.value = workflows.ref;
+                    } catch (e) {
+                        console.error("Failed to fetch workflows", e);
+                    }
+                };
+
+                const submitWorkflow = async () => {
+                    if (!rawText.value.trim()) return;
+                    loading.value = true;
+                    try {
+                        await fetch('/api/ingest', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ raw_text: rawText.value })
+                        });
+                        rawText.value = "";
+                        await fetchWorkflows();
+                    } catch (e) {
+                        console.error("Failed to submit workflow", e);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const parseTasks = (jsonStr) => {
+                    try { return JSON.parse(jsonStr) || []; } catch (e) { return []; }
+                };
+
+                const formatTime = (isoStr) => {
+                    return new Date(isoStr).toLocaleTimeString();
+                };
+
+                onMounted(fetchWorkflows);
+
+                return {
+                    workflows, rawText, loading, submitWorkflow, parseTasks, formatTime
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
