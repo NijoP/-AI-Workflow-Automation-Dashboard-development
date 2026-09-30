@@ -1,9 +1,9 @@
-import sqlite3
 import json
 from datetime import datetime
+from db_utils import get_db_connection
 
 def init_db():
-    conn = sqlite3.connect('workflow_engine.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     # Workflows table

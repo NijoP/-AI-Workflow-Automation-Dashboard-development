@@ -3,6 +3,7 @@ import socketserver
 import json
 import sqlite3
 import urllib.parse
+from db_utils import get_db_connection
 
 PORT = 8000
 
@@ -14,7 +15,7 @@ class WorkflowHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             
-            conn = sqlite3.connect('workflow_engine.db')
+            conn = get_db_connection()
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM workflows ORDER BY timestamp DESC')

@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+*.pyo
+workflow_engine.db
