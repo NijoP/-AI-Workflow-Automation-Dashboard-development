@@ -1,13 +1,13 @@
-import sqlite3
 import uuid
 from datetime import datetime
 import sys
+from db_utils import get_db_connection
 
 def ingest(raw_text):
     workflow_id = str(uuid.uuid4())[:8]
     timestamp = datetime.utcnow().isoformat()
     
-    conn = sqlite3.connect('workflow_engine.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     cursor.execute('''

@@ -1,12 +1,12 @@
-import sqlite3
 import os
+from db_utils import get_db_connection
 
 def check():
     db_exists = os.path.exists('workflow_engine.db')
     print(f"Database status: {'OK' if db_exists else 'MISSING'}")
     
     if db_exists:
-        conn = sqlite3.connect('workflow_engine.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) FROM workflows')
         count = cursor.fetchone()[0]

@@ -1,13 +1,13 @@
-import sqlite3
 import json
 import time
 import sys
 import subprocess
+from db_utils import get_db_connection
 
 def process_workflow(workflow_id):
     start_time = time.time()
     
-    conn = sqlite3.connect('workflow_engine.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     cursor.execute('SELECT raw_text FROM workflows WHERE workflow_id = ?', (workflow_id,))
