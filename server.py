@@ -29,11 +29,30 @@ class WorkflowHandler(http.server.SimpleHTTPRequestHandler):
         if self.path == '/api/ingest':
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
-            data = json.loads(post_data.decode())
+
+            try:
+                data = json.loads(post_data.decode())
+            except json.JSONDecodeError:
+                self.send_error(400, "Bad Request: Invalid JSON")
+                return
+
+            if not isinstance(data, dict) or 'raw_text' not in data:
+                self.send_error(400, "Bad Request: Missing 'raw_text' field")
+                return
+
+            raw_text = data['raw_text']
+            if not isinstance(raw_text, str):
+                self.send_error(400, "Bad Request: 'raw_text' must be a string")
+                return
+
+            # Prevent Argument list too long / large input DOS
+            if len(raw_text) > 65536:
+                self.send_error(413, "Payload Too Large: 'raw_text' exceeds maximum length")
+                return
             
             import subprocess
             # Ingest
-            process = subprocess.Popen(['python3', 'ingest_workflow.py', data['raw_text']], stdout=subprocess.PIPE)
+            process = subprocess.Popen(['python3', 'ingest_workflow.py', raw_text], stdout=subprocess.PIPE)
             out, _ = process.communicate()
             workflow_id = out.decode().split('Workflow ')[1].split(' ingested')[0]
             
