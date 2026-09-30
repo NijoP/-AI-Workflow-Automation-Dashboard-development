@@ -1,6 +1,5 @@
 import sqlite3
 import json
-import time
 import sys
 
 def extract_tasks(text):
