@@ -3,15 +3,17 @@ import socketserver
 import json
 import sqlite3
 import urllib.parse
+import os
 
 PORT = 8000
+ALLOWED_ORIGIN = os.environ.get('ALLOWED_ORIGIN', 'http://localhost:8000')
 
 class WorkflowHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/api/workflows':
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Origin', ALLOWED_ORIGIN)
             self.end_headers()
             
             conn = sqlite3.connect('workflow_engine.db')
@@ -42,11 +44,12 @@ class WorkflowHandler(http.server.SimpleHTTPRequestHandler):
             
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Origin', ALLOWED_ORIGIN)
             self.end_headers()
             self.wfile.write(json.dumps({"status": "success", "workflow_id": workflow_id}).encode())
 
 if __name__ == "__main__":
+    socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("", PORT), WorkflowHandler) as httpd:
         print(f"Serving at port {PORT}")
         httpd.serve_forever()
