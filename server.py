@@ -3,6 +3,8 @@ import socketserver
 import json
 import sqlite3
 import urllib.parse
+from ingest_workflow import ingest
+from process_text import process_workflow
 
 PORT = 8000
 
@@ -31,14 +33,11 @@ class WorkflowHandler(http.server.SimpleHTTPRequestHandler):
             post_data = self.rfile.read(content_length)
             data = json.loads(post_data.decode())
             
-            import subprocess
             # Ingest
-            process = subprocess.Popen(['python3', 'ingest_workflow.py', data['raw_text']], stdout=subprocess.PIPE)
-            out, _ = process.communicate()
-            workflow_id = out.decode().split('Workflow ')[1].split(' ingested')[0]
+            workflow_id = ingest(data['raw_text'])
             
             # Process
-            subprocess.run(['python3', 'process_text.py', workflow_id])
+            process_workflow(workflow_id)
             
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
@@ -47,6 +46,7 @@ class WorkflowHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": "success", "workflow_id": workflow_id}).encode())
 
 if __name__ == "__main__":
+    socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("", PORT), WorkflowHandler) as httpd:
         print(f"Serving at port {PORT}")
         httpd.serve_forever()
