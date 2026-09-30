@@ -2,7 +2,6 @@ import http.server
 import socketserver
 import json
 import sqlite3
-import urllib.parse
 
 PORT = 8000
 
