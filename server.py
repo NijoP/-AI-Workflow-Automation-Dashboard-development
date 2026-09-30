@@ -32,10 +32,10 @@ class WorkflowHandler(http.server.SimpleHTTPRequestHandler):
             data = json.loads(post_data.decode())
             
             import subprocess
+            import ingest_workflow
+
             # Ingest
-            process = subprocess.Popen(['python3', 'ingest_workflow.py', data['raw_text']], stdout=subprocess.PIPE)
-            out, _ = process.communicate()
-            workflow_id = out.decode().split('Workflow ')[1].split(' ingested')[0]
+            workflow_id = str(ingest_workflow.ingest(data['raw_text']))
             
             # Process
             subprocess.run(['python3', 'process_text.py', workflow_id])
