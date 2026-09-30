@@ -3,6 +3,7 @@ import json
 import time
 import sys
 import subprocess
+from extract_tasks import extract_tasks
 
 def process_workflow(workflow_id):
     start_time = time.time()
@@ -23,9 +24,7 @@ def process_workflow(workflow_id):
     summary = f"Processed input of {len(raw_text)} characters. Primary focus: " + raw_text[:50] + "..."
     
     # Call extract_tasks script
-    process = subprocess.Popen(['python3', 'extract_tasks.py', raw_text], stdout=subprocess.PIPE)
-    tasks_json, _ = process.communicate()
-    tasks = json.loads(tasks_json.decode())
+    tasks = extract_tasks(raw_text)
     
     priority_items = [t for t in tasks if 'urgent' in t.lower() or 'report' in t.lower()]
     
