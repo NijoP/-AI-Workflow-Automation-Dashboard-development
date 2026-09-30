@@ -11,7 +11,7 @@ class WorkflowHandler(http.server.SimpleHTTPRequestHandler):
         if self.path == '/api/workflows':
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Origin', 'http://localhost:8000')
             self.end_headers()
             
             conn = sqlite3.connect('workflow_engine.db')
@@ -42,7 +42,7 @@ class WorkflowHandler(http.server.SimpleHTTPRequestHandler):
             
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Origin', 'http://localhost:8000')
             self.end_headers()
             self.wfile.write(json.dumps({"status": "success", "workflow_id": workflow_id}).encode())
 
