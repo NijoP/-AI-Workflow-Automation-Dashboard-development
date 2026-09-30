@@ -111,8 +111,7 @@
                 const fetchWorkflows = async () => {
                     try {
                         const response = await fetch('/api/workflows');
-                        workflows.ref = await response.json(); // Fix assignment
-                        workflows.value = workflows.ref;
+                        workflows.value = await response.json();
                     } catch (e) {
                         console.error("Failed to fetch workflows", e);
                     }
